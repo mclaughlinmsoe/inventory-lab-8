@@ -1,0 +1,24 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventoryapp
+  labels:
+    app: inventoryapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: inventoryapp
+  # pod spec begins here
+  template:
+    metadata:
+      labels:
+        app: inventoryapp
+    spec:
+      containers:
+        - name: inventoryapp
+          image: registry.digitalocean.com/mclaughlins/inventory:0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5000

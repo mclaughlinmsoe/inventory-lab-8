@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Drink a Beer</title>
+        <link rel="stylesheet" href="styles.css" />
+    </head>
+    <body>
+        <div class="navbar">
+            <a href="/">Home</a>
+            <a href="/locations">Manage Locations</a>
+            <a href="/beers">Manage Beers</a>
+            <a href="/drink">Drink a Beer</a>
+        </div>
+        <div class="container content">
+            <h1>Drink a Beer</h1>
+            <div class="form-group">
+                <label for="beer-select">Select Beer</label>
+                <select
+                    id="beer-select"
+                    onchange="loadLocationsAndSizes()"
+                ></select>
+            </div>
+            <div class="form-group">
+                <label for="location-select">Select Location</label>
+                <select id="location-select"></select>
+            </div>
+            <div class="form-group">
+                <label for="size-select">Select Size</label>
+                <select id="size-select"></select>
+            </div>
+            <button onclick="drinkBeer()">Drink Beer</button>
+            <div id="message"></div>
+        </div>
+        <script>
+            async function loadBeers() {
+                const response = await fetch("/beer-list");
+                const beers = await response.json();
+                const beerSelect = document.getElementById("beer-select");
+                beerSelect.innerHTML = "";
+                beers.forEach((beer) => {
+                    const option = document.createElement("option");
+                    option.value = `${beer.Name},${beer.Brewery}`;
+                    option.text = `${beer.Name} (${beer.Brewery})`;
+                    beerSelect.appendChild(option);
+                });
+                loadLocationsAndSizes(); // Load locations and sizes for the first beer by default
+            }
+
+            async function loadLocationsAndSizes() {
+                const beerSelect = document
+                    .getElementById("beer-select")
+                    .value.split(",");
+                const beerName = beerSelect[0];
+                const brewery = beerSelect[1];
+
+                // Load locations
+                const locationResponse = await fetch(
+                    `/beer/${beerName}/${brewery}/locations`
+                );
+                const locations = await locationResponse.json();
+                const locationSelect =
+                    document.getElementById("location-select");
+                locationSelect.innerHTML = "";
+                locations.forEach((location) => {
+                    const option = document.createElement("option");
+                    option.value = location.Name;
+                    option.text = location.Name;
+                    locationSelect.appendChild(option);
+                });
+
+                // Load sizes
+                const sizeResponse = await fetch(
+                    `/beer/${beerName}/${brewery}/sizes`
+                );
+                const sizes = await sizeResponse.json();
+                const sizeSelect = document.getElementById("size-select");
+                sizeSelect.innerHTML = "";
+                sizes.forEach((size) => {
+                    const option = document.createElement("option");
+                    option.value = size.Size;
+                    option.text = size.Size;
+                    sizeSelect.appendChild(option);
+                });
+            }
+
+            async function drinkBeer() {
+                const beerSelect = document
+                    .getElementById("beer-select")
+                    .value.split(",");
+                const beerName = beerSelect[0];
+                const brewery = beerSelect[1];
+                const locationName =
+                    document.getElementById("location-select").value;
+                const size = document.getElementById("size-select").value;
+                const response = await fetch("/drink", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        beerName,
+                        brewery,
+                        locationName,
+                        size,
+                    }),
+                });
+                const result = await response.json();
+                document.getElementById("message").textContent = result.message;
+                loadLocationsAndSizes(); // Reload locations and sizes for the selected beer
+            }
+
+            // Load beers and locations on page load
+            window.onload = function () {
+                loadBeers();
+            };
+        </script>
+    </body>
+</html>

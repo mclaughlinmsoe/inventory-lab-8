@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Manage Locations</title>
+        <link rel="stylesheet" href="styles.css" />
+    </head>
+    <body>
+        <div class="navbar">
+            <a href="/">Home</a>
+            <a href="/locations">Manage Locations</a>
+            <a href="/beers">Manage Beers</a>
+            <a href="/drink">Drink a Beer</a>
+        </div>
+        <div class="container content">
+            <h1>Manage Locations</h1>
+            <div class="form-group">
+                <h2>Add Location</h2>
+                <label for="location-name">Location Name</label>
+                <input type="text" id="location-name" />
+                <button onclick="addLocation()">Add Location</button>
+            </div>
+            <div class="form-group">
+                <h2>Get Beers for Location</h2>
+                <label for="location-select">Select Location</label>
+                <select id="location-select"></select>
+                <button onclick="getBeersForLocation()">Get Beers</button>
+                <ul id="beers-list"></ul>
+            </div>
+        </div>
+        <script>
+            async function addLocation() {
+                const name = document.getElementById("location-name").value;
+                const response = await fetch("/location", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ name }),
+                });
+                const result = await response.json();
+                alert(result.message);
+                loadLocations();
+            }
+
+            async function loadLocations() {
+                const response = await fetch("/location-list");
+                const locations = await response.json();
+                const locationSelect =
+                    document.getElementById("location-select");
+                locationSelect.innerHTML = "";
+                locations.forEach((location) => {
+                    const option = document.createElement("option");
+                    option.value = location.Name;
+                    option.text = location.Name;
+                    locationSelect.appendChild(option);
+                });
+            }
+
+            async function getBeersForLocation() {
+                const locationName =
+                    document.getElementById("location-select").value;
+                const response = await fetch(`/location/${locationName}/beers`);
+                const beers = await response.json();
+                const beersList = document.getElementById("beers-list");
+                beersList.innerHTML = "";
+                beers.forEach((beer) => {
+                    const li = document.createElement("li");
+                    li.textContent = `Name: ${beer.Name}, Brewery: ${beer.Brewery}, Quantity: ${beer.Quantity}, Size: ${beer.Size}`;
+                    beersList.appendChild(li);
+                });
+            }
+
+            // Load locations on page load
+            window.onload = loadLocations;
+        </script>
+    </body>
+</html>

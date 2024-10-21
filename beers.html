@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Manage Beers</title>
+        <link rel="stylesheet" href="styles.css" />
+    </head>
+    <body>
+        <div class="navbar">
+            <a href="/">Home</a>
+            <a href="/locations">Manage Locations</a>
+            <a href="/beers">Manage Beers</a>
+            <a href="/drink">Drink a Beer</a>
+        </div>
+        <div class="container content">
+            <h1>Manage Beers</h1>
+            <div class="form-group">
+                <h2>Add Beer</h2>
+                <label for="beer-name">Beer Name</label>
+                <input type="text" id="beer-name" />
+                <label for="brewery">Brewery</label>
+                <input type="text" id="brewery" />
+                <button onclick="addBeer()">Add Beer</button>
+            </div>
+            <div class="form-group">
+                <h2>Add Inventory</h2>
+                <label for="beer-select">Select Beer</label>
+                <select id="beer-select"></select>
+                <label for="location-select">Select Location</label>
+                <select id="location-select"></select>
+                <label for="quantity">Quantity</label>
+                <input type="number" id="quantity" />
+                <label for="size">Size</label>
+                <input type="text" id="size" />
+                <button onclick="addInventory()">Add Inventory</button>
+            </div>
+            <div class="form-group">
+                <h2>Get Inventory for Beer</h2>
+                <label for="beer-inventory-select">Select Beer</label>
+                <select id="beer-inventory-select"></select>
+                <button onclick="getInventoryForBeer()">Get Inventory</button>
+                <ul id="beer-inventory-list"></ul>
+            </div>
+        </div>
+        <script>
+            async function addBeer() {
+                const name = document.getElementById("beer-name").value;
+                const brewery = document.getElementById("brewery").value;
+                try {
+                    const response = await fetch("/beer", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({ name, brewery }),
+                    });
+                    if (!response.ok) {
+                        throw new Error("Network response was not ok");
+                    }
+                    const result = await response.json();
+                    alert(result.message);
+                    loadBeers();
+                } catch (error) {
+                    console.error(
+                        "There was a problem with the fetch operation:",
+                        error
+                    );
+                }
+            }
+
+            async function addInventory() {
+                const beer = document.getElementById("beer-select").value;
+                const location =
+                    document.getElementById("location-select").value;
+                const quantity = document.getElementById("quantity").value;
+                const size = document.getElementById("size").value;
+                const [beerName, brewery] = beer.split(" - ");
+                try {
+                    const response = await fetch("/inventory", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            beer_name: beerName,
+                            brewery,
+                            location_name: location,
+                            quantity,
+                            size,
+                        }),
+                    });
+                    if (!response.ok) {
+                        throw new Error("Network response was not ok");
+                    }
+                    const result = await response.json();
+                    alert(result.message);
+                } catch (error) {
+                    console.error(
+                        "There was a problem with the fetch operation:",
+                        error
+                    );
+                }
+            }
+
+            async function getInventoryForBeer() {
+                const beer = document.getElementById(
+                    "beer-inventory-select"
+                ).value;
+                const [beerName, brewery] = beer.split(" - ");
+                try {
+                    const response = await fetch(
+                        `/beer/${beerName}/${brewery}/inventory`
+                    );
+                    if (!response.ok) {
+                        throw new Error("Network response was not ok");
+                    }
+                    const inventory = await response.json();
+                    const beerInventoryList = document.getElementById(
+                        "beer-inventory-list"
+                    );
+                    beerInventoryList.innerHTML = "";
+                    inventory.forEach((item) => {
+                        const li = document.createElement("li");
+                        li.textContent = `Location: ${item.LocationName}, Quantity: ${item.Quantity}, Size: ${item.Size}`;
+                        beerInventoryList.appendChild(li);
+                    });
+                } catch (error) {
+                    console.error(
+                        "There was a problem with the fetch operation:",
+                        error
+                    );
+                }
+            }
+
+            async function loadBeers() {
+                const response = await fetch("/beer-list");
+                const beers = await response.json();
+                const beerSelect = document.getElementById("beer-select");
+                const beerInventorySelect = document.getElementById(
+                    "beer-inventory-select"
+                );
+                beerSelect.innerHTML = "";
+                beerInventorySelect.innerHTML = "";
+                beers.forEach((beer) => {
+                    const option = document.createElement("option");
+                    option.value = `${beer.Name} - ${beer.Brewery}`;
+                    option.text = `${beer.Name} - ${beer.Brewery}`;
+                    beerSelect.appendChild(option);
+                    beerInventorySelect.appendChild(option.cloneNode(true));
+                });
+            }
+
+            async function loadLocations() {
+                const response = await fetch("/location-list");
+                const locations = await response.json();
+                const locationSelect =
+                    document.getElementById("location-select");
+                locationSelect.innerHTML = "";
+                locations.forEach((location) => {
+                    const option = document.createElement("option");
+                    option.value = location.Name;
+                    option.text = location.Name;
+                    locationSelect.appendChild(option);
+                });
+            }
+
+            // Load beers and locations on page load
+            window.onload = function () {
+                loadBeers();
+                loadLocations();
+            };
+        </script>
+    </body>
+</html>
